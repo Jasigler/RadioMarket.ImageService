@@ -27,17 +27,16 @@ namespace Services
             _context = context;
         }
 
-       public async Task<Guid> PushImagesToNewBucket(int itemId, IFormFile[] images )
+       public async Task<Guid> CreateNewImageBucket(int itemId)
         {
             var newBucketId = Guid.NewGuid();
-            await _client.MakeBucketAsync(newBucketId.ToString());
-           
-            foreach (var image in images)
-            {
-                await _client.PutObjectAsync(newBucketId.ToString(), image.FileName, image.OpenReadStream(), image.Length);
-            }
+            var bucketExists = await _client.BucketExistsAsync(newBucketId.ToString());
             
-           
+            if (!bucketExists)
+            {
+                await _client.MakeBucketAsync(newBucketId.ToString());
+            } 
+                  
             var payload = new BucketReference();
             payload.bucket_id = newBucketId;
             payload.bucket_item = itemId;
@@ -48,7 +47,16 @@ namespace Services
             return newBucketId;
         }
 
-        public async Task AddImagesToItemBucket(int itemId, IFormFile[] images)
+        public async Task<Guid> GetbucketIdForItem(int itemId)
+        {
+            var item = await _context.BucketReferences
+                .Where(item => item.bucket_item == itemId)
+                .FirstOrDefaultAsync();
+
+            return item.bucket_id;
+        }
+
+        public async Task AddImagesToBucket(int itemId, IFormFile[] images)
         {
             var bucketId = await _context.BucketReferences
                 .Where(item => item.bucket_item == itemId)
@@ -60,7 +68,13 @@ namespace Services
             }
         }
 
-        public async Task<List<Item>> GetImagesByItem(int itemId)
+        public async Task RemoveImageFromBucket(Guid bucketId, string imageId)
+        {
+           await _client.RemoveObjectAsync(bucketId.ToString(), imageId);
+        }
+      
+
+        public async Task<List<Item>> GetListOfImagesFromBucket(int itemId)
         {
             var target = await _context.BucketReferences
                    .Where(reference => reference.bucket_item == itemId)
@@ -70,7 +84,6 @@ namespace Services
 
             var convertedTargetName = target.ToString();
             convertedTargetName.ToLower();
-
 
             IObservable<Item> itemObservable = _client.ListObjectsAsync(target.bucket_id.ToString(), null, true); ;
             IDisposable subscriber = itemObservable.ToList().Subscribe(
@@ -82,6 +95,15 @@ namespace Services
 
             return imageList;
         }
+
+        public async Task<IFormFileCollection> GetImagesFromBucket(Guid bucketId)
+        {
+            
+        }
+      
+            
+        
+
 
         public bool Save()
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Minio.DataModel;
 using Models.Interfaces;
 
 
@@ -18,33 +19,51 @@ namespace RadioMarket.ImageService.Controllers
         {
             _repository = repository;
         }
-        [HttpGet("{item}")]
-        public async Task<ActionResult> GetImageListForItem(int item)
+       
+        
+        [HttpPost("bucket/{imageId}")]
+        public async Task<ActionResult<Guid>> CreateNewBucket(int imageId)
         {
-            var result = await _repository.GetImagesByItem(item);
-            return Ok(result);
+            var newBucketId = await _repository.CreateNewImageBucket(imageId);
+            return Ok(newBucketId);
         }
 
-        [HttpPost("{item}")]
-        public async Task<ActionResult<Guid>> CreateBucketAndStoreNewItemImages(int item, [FromForm] IFormFile[] image)
+        [HttpPost("{bucketId}")]
+        public async Task<ActionResult> AddImages(Guid bucketId, [FromForm] IFormFile[] image)
         {
-            if (image.Length > 0)
-            {
-                var createdBucketId = await _repository.PushImagesToNewBucket(item, image);
-                return Ok(createdBucketId);
-            }
-            else return BadRequest("Images Expected");
+            await _repository.AddImagesToBucket(bucketId, image);
+            return StatusCode(201);
         }
 
-        [HttpPost("/add/{item}")]
-        public async Task<ActionResult> AddImagesToBucket(int item, [FromForm] IFormFile[] images)
+        [HttpGet("bucket/{imageId}")]
+        public async Task<ActionResult<Guid>> GetBucketIdForImage(int imageId)
         {
-            if (images.Length > 0)
-            {
-                await _repository.AddImagesToItemBucket(item, images);
-                return StatusCode(201);
-            }
-            else return BadRequest("Images expected");
+            var bucketId = await _repository.GetBucketIdForItem(imageId);
+            return Ok(bucketId);
         }
+
+        [HttpGet("{bucketId}")]
+        public async Task<ActionResult<Item>> GetObjectListFromBucket(Guid bucketId)
+        {
+            var bucketObjects = await _repository.GetListOfImagesFromBucket(bucketId);
+            return Ok(bucketObjects);
+        }
+
+        [HttpGet("url/{bucketId}}")]
+        public async Task<ActionResult<string>> GetPresignedUrl (Guid bucketId, [FromBody] string objectName)
+        {
+            var objectUrl = _repository.GetPresignedGetObjectAsync(bucketId, objectName);
+            return Ok(objectUrl);
+        }
+
+        [HttpDelete("{bucketId}")]
+        public async Task<ActionResult> RemoveImageFromBucket(Guid bucketId, [FromBody] string objectName)
+        {
+            await _repository.RemoveImageFromBucket(bucketId, objectName);
+            return Ok();
+        }
+
+
+
     }
 }

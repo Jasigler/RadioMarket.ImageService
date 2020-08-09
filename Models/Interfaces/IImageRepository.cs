@@ -10,13 +10,12 @@ namespace Models.Interfaces
 {
     public interface IImageRepository
     {
-        public Task<Guid> CreteNewImageBucket(int imageId);
+        public Task<Guid> CreateNewImageBucket(int itemId);
         public Task<Guid> GetBucketIdForItem(int imageId);
-        public Task<IFormFileCollection> GetImagesFromBucket(Guid bucketId);
-        public Task AddImagesToBucket(int id, IFormFile[] images);
-        public Task RemoveImageFromBucket(Guid bucketId, string imageId);
-        public Task<List<Item>> GetListOfImagesFromBucket(int id);
-        public Task RemoveImageFromBucket(int itemId, int imageId);
+        public Task AddImagesToBucket(Guid bucketId, IFormFile[] images);
+        public Task RemoveImageFromBucket(Guid bucketId, string objectName);
+        public Task<List<Item>> GetListOfImagesFromBucket(Guid bucketId);
+        public Task<string> GetPresignedGetObjectAsync(Guid bucketId, string objectName);
 
     }
 }

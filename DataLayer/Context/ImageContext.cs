@@ -12,7 +12,7 @@ namespace DataLayer.Context
     {
         public ImageContext(DbContextOptions<ImageContext> options) : base(options) { }
 
-        public DbSet<BucketReference> BucketReferences {get; set;}
+        public DbSet<ImageBucket> ImageBuckets  {get; set;}
 
         
     }

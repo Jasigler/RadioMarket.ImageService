@@ -1,3 +1,4 @@
+using AutoMapper;
 using DataLayer.Context;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -31,14 +32,17 @@ namespace RadioMarket.ImageService
             services.AddControllers();
             //.AddNewtonsoftJson(options =>
             //{
-            //   options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-            // });
+            //    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            //});
+
+            services.AddAutoMapper(typeof(Startup));
 
             services.Configure<FormOptions>(options =>
             {
                 options.ValueCountLimit = 10;
-                options.ValueLengthLimit = int.MaxValue;
-                options.MultipartBodyLengthLimit = long.MaxValue;
+                options.ValueLengthLimit = 5000000;
+                options.MultipartBodyLengthLimit = 50000000;
+                options.MemoryBufferThreshold = 50000000;
             });
             
             services.AddDbContext<ImageContext>(options =>

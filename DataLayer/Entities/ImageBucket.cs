@@ -5,12 +5,12 @@ using System.Text;
 
 namespace DataLayer.Entities
 {
-    public class BucketReference
+    public class ImageBucket
     {
         [Key]
         public Guid bucket_id { get; set; }
 
         [Required]
-        public int bucket_item { get; set; }
+        public int item_id { get; set; }
     }
 }

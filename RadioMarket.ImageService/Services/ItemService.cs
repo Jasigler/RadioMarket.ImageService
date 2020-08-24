@@ -98,6 +98,7 @@ namespace RadioMarket.ImageService.Services
                     {
                         throw new IOException("File Does Not Exist");
                     }
+                    File.Delete(targetImage);
                 }
             }
             catch (IOException exception)

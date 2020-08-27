@@ -1,24 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using HealthCheck;
-using Microsoft.VisualStudio.Services.Location;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Newtonsoft.Json;
-using Microsoft.AspNetCore.Http;
 using HealthChecks.UI.Client;
-
+using HealthCheck.HealthChecks;
 namespace RadioMarket.ImageService
 {
     public class Startup
@@ -47,7 +36,7 @@ namespace RadioMarket.ImageService
             {
                 options.AddPolicy(name: AllowSpecificOrigins,
                     builder =>
-                    builder.WithOrigins("localhost").AllowAnyMethod().AllowAnyHeader());
+                    builder.WithOrigins("localhost").AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin());
             });
             services.AddHealthChecksUI(option =>
             {
@@ -55,8 +44,8 @@ namespace RadioMarket.ImageService
             }).AddInMemoryStorage();
 
             services.AddHealthChecks()
-                .AddCheck<HealthCheck.HealthChecks.MemoryHealthCheck>("memory", tags: new[] { "memory" })
-                .AddCheck<HealthCheck.HealthChecks.DiskHealthCheck>("disk", tags: new[] { "disk" });
+                .AddCheck<MemoryHealthCheck>("memory", tags: new[] { "memory" })
+                .AddCheck<DiskHealthCheck>("disk", tags: new[] { "disk" });
 
             services.Configure<IISServerOptions>(options =>
             {
@@ -81,8 +70,6 @@ namespace RadioMarket.ImageService
 
 
             app.UseHttpsRedirection();
-
-            //app.UseHealthChecks("/health");
 
             app.UseCors(AllowSpecificOrigins);
 

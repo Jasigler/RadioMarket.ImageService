@@ -1,16 +1,19 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 namespace Models.Interfaces
 {
-   public interface IItemService
+    public interface IItemService
+
     {
-        public ReqResult CreateDirectory(int itemId);
-        public Task<ReqResult[]> AddImages(int itemId, IFormFile[] images);
-        public object GetImageList(int itemId);
-        public ReqResult DeleteImages(int itemId, string[] images);
+        public Task<ReqResult> CreateBucket(Guid itemId);
+
+        public Task<ReqResult> AddImage(Guid itemId, IFormFile[] images);
+
+        public Task<List<string>> GetImageList(Guid itemId);
+
+        public ReqResult DeleteImage(Guid itemId, string[] images);
     }
 }

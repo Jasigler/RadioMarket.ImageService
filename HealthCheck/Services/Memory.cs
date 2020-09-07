@@ -1,8 +1,6 @@
 ﻿using HealthCheck.Models;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 
 namespace HealthCheck.Services
 {
@@ -29,7 +27,6 @@ namespace HealthCheck.Services
             status.Used = status.Total - status.Free;
 
             return status;
-
         }
     }
 }

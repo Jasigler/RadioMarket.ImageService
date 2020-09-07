@@ -1,14 +1,12 @@
 ﻿using HealthCheck.Services;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HealthCheck.HealthChecks
 {
-   public class MemoryHealthCheck : IHealthCheck
+    public class MemoryHealthCheck : IHealthCheck
     {
         public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context,
             CancellationToken cancellationToken = default)
@@ -27,7 +25,6 @@ namespace HealthCheck.HealthChecks
             {
                 status = HealthStatus.Unhealthy;
             }
-
 
             var responseData = new Dictionary<string, object>();
             responseData.Add("Total", metrics.Total);

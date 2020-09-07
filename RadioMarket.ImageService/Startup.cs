@@ -1,22 +1,25 @@
-using System;
+using HealthCheck.HealthChecks;
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using HealthChecks.UI.Client;
-using HealthCheck.HealthChecks;
+using Models.Interfaces;
+using RadioMarket.ImageService.Services;
+using System;
+
 namespace RadioMarket.ImageService
 {
     public class Startup
     {
-        readonly string AllowSpecificOrigins = "_allowSpecificOrigins";
+        private readonly string AllowSpecificOrigins = "_allowSpecificOrigins";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-
         }
 
         public IConfiguration Configuration { get; }
@@ -25,7 +28,8 @@ namespace RadioMarket.ImageService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers().AddNewtonsoftJson();
-            services.AddScoped<Models.Interfaces.IItemService, Services.ItemService>();
+            services.AddScoped<IItemService, ItemService>();
+            services.AddScoped<ICategoryService, CategoryService>();
             services.Configure<FormOptions>(options =>
             {
                 options.ValueCountLimit = 10;
@@ -40,7 +44,7 @@ namespace RadioMarket.ImageService
             });
             services.AddHealthChecksUI(option =>
             {
-                option.AddHealthCheckEndpoint("main", "https://localhost:44359/health");
+                option.AddHealthCheckEndpoint("main", "");
             }).AddInMemoryStorage();
 
             services.AddHealthChecks()
@@ -56,8 +60,6 @@ namespace RadioMarket.ImageService
             {
                 options.MemoryBufferThreshold = Int32.MaxValue;
             });
-
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -67,7 +69,6 @@ namespace RadioMarket.ImageService
             {
                 app.UseDeveloperExceptionPage();
             }
-
 
             app.UseHttpsRedirection();
 
@@ -79,8 +80,8 @@ namespace RadioMarket.ImageService
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
                 endpoints.MapHealthChecksUI();
+                endpoints.MapControllers();
                 endpoints.MapHealthChecks("health", new HealthCheckOptions()
                 {
                     Predicate = _ => true,

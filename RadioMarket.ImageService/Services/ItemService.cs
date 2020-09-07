@@ -1,114 +1,79 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
+using Minio;
+using Minio.DataModel;
 using Models;
 using Models.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 
 namespace RadioMarket.ImageService.Services
 {
     public class ItemService : IItemService
+
     {
-        private readonly IConfiguration config;
-        private readonly string itemPath;
-
-        public ItemService(IConfiguration configuration)
+        private static MinioClient _itemClient = new MinioClient(
+            "Localhost:9000",
+            "AKIAIOSFODNN7EXAMPLE",
+            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
+        public ItemService()
         {
-            config = configuration;
-            this.itemPath = config.GetValue<string>("StoragePath:Item");
-
         }
 
-        public ReqResult CreateDirectory (int itemId)
+        public async Task<ReqResult> AddImage(Guid itemId, IFormFile[] images)
         {
-            string pathString = Path.Combine(this.itemPath, itemId.ToString());
+            var exists = await _itemClient.BucketExistsAsync(itemId.ToString());
 
-            if (!Directory.Exists(pathString))
+            if (!exists)
             {
-                try
-                {
-                   Directory.CreateDirectory(pathString);
-                    return ReqResult.Ok;
-
-                }
-                catch (IOException exception)
-                {
-                    Console.WriteLine(exception);
-                    return ReqResult.IO_Failure;
-                }
+                return ReqResult.NotFound;
             }
-            else return ReqResult.Directory_Exists; 
-        }
 
-        public async Task<ReqResult[]> AddImages (int itemId, IFormFile[] images)
-        {
-            var processResults = new ReqResult[images.Length];
-            string itemFolder = Path.Combine(this.itemPath, itemId.ToString()); 
-             
-            if (!Directory.Exists(itemFolder))
-            {
-                this.CreateDirectory(itemId);
-            }
             foreach (var image in images)
             {
-                string imagePath = Path.Combine(itemFolder, image.FileName);
-
-                if (!File.Exists(imagePath))
-                {
-                    var fileStream = new FileStream(imagePath, FileMode.Create);
-                    await image.CopyToAsync(fileStream);
-                    fileStream.Close();
-                    processResults.Append(ReqResult.Ok);
-
-                }
-                else processResults.Append(ReqResult.ImageExists);
+                await _itemClient.PutObjectAsync(itemId.ToString(), image.FileName, image.OpenReadStream(), image.Length);
             }
-
-            return processResults;
-        }
-
-        public object  GetImageList(int itemId)
-        {
-            var imagePath = Path.Combine(this.itemPath, itemId.ToString());
-            try
-            {
-                return Directory.GetFiles(imagePath);
-            }
-            catch (IOException exception)
-            {
-                Console.WriteLine(exception);
-                return exception;
-            } 
-            
-        }
-
-        public ReqResult DeleteImages(int itemId, string[] images)
-        {
-            var itemDirectory = Path.Combine(this.itemPath, itemId.ToString());
-            
-            try
-            {
-                foreach (var image in images)
-                {
-                    var targetImage = Path.Combine(itemDirectory, image);
-                    if (!File.Exists(targetImage))
-                    {
-                        throw new IOException("File Does Not Exist");
-                    }
-                    File.Delete(targetImage);
-                }
-            }
-            catch (IOException exception)
-            {
-                Console.WriteLine(exception);
-                return ReqResult.IO_Failure;
-            }
-
             return ReqResult.Ok;
         }
 
+        public async Task<ReqResult> CreateBucket(Guid itemId)
+        {
+            var exists = await _itemClient.BucketExistsAsync(itemId.ToString());
+            if (exists)
+            {
+                return ReqResult.BucketExists;
+            }
+
+            await _itemClient.MakeBucketAsync(itemId.ToString());
+            return ReqResult.Ok;
+        }
+
+        public ReqResult DeleteImage(Guid itemId, string[] images)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<List<string>> GetImageList(Guid itemId)
+        {
+            var imageList = new List<Item>();
+            var imageLinks = new List<string>();
+
+            IObservable<Item> itemObservable = _itemClient.ListObjectsAsync(itemId.ToString(), null, true); 
+            IDisposable subscriber = itemObservable.ToList().Subscribe(
+               x => imageList.AddRange(x),
+               ex => Console.WriteLine("OnError: {0}", ex.Message),
+               () => Console.WriteLine("Done"));
+            itemObservable.Wait();
+            subscriber.Dispose();
+
+            foreach (var image in imageList)
+            {
+                var link = await _itemClient.PresignedGetObjectAsync(itemId.ToString(), image.Key.ToString(), 60 * 60 * 24);
+                imageLinks.Add(link);
+            }
+
+            return imageLinks;
+        }
     }
 }

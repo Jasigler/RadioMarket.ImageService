@@ -1,6 +1,6 @@
 ﻿namespace Models
 {
-    public class Image
+    public class ImageLink
     {
         public string[] FileName { get; }
     }

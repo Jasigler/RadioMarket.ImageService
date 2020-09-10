@@ -65,21 +65,20 @@ namespace RadioMarket.ImageService.Services
 
         public Task<string> GetImageLink(int categoryId)
         {
-            var categoryBucket = categoryId.ToString();
-            var categoryImage = new List<Image>();
-            Image categoryTarget;
 
-            IObservable<Item> itemObservable = _categoryClient.ListObjectsAsync(categoryBucket, null, true);
+            var categoryItem = new Item();
+
+            IObservable<Item> itemObservable = _categoryClient.ListObjectsAsync(categoryId.ToString(), null, true); ;
             IDisposable subscriber = itemObservable.ToList().Subscribe(
-                x => categoryImage.Add((Image)x),
-                ex => Console.WriteLine(ex.Message)) ;
+               x => categoryItem = x.First(),
+               ex => Console.WriteLine("OnError: {0}", ex.Message),
+               () => Console.WriteLine("Done")); 
             itemObservable.Wait();
             subscriber.Dispose();
 
-            categoryTarget = categoryImage.First();
 
-            var imageLink = _categoryClient.PresignedGetObjectAsync(categoryBucket, categoryTarget.FileName.ToString(), 60 * 60 * 24);
-
+           
+            var imageLink = _categoryClient.PresignedGetObjectAsync(categoryId.ToString(), categoryItem.Key, 60 * 60 * 24); 
             return imageLink;
         }
     }

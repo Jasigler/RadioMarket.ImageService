@@ -45,7 +45,7 @@ namespace RadioMarket.ImageService.Controllers
         }
 
         [HttpGet("{categoryId}")]
-        public async Task<ActionResult> GetImage([FromRoute] int categoryId)
+        public async Task<ActionResult> GetLink([FromRoute] int categoryId)
         {
             var link = await _category.GetImageLink(categoryId);
             return Ok(link);
